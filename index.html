@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자동차보험 환자 안내문 작성기</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --highlight: #d32f2f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "맑은 고딕", "Malgun Gothic", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+
+    /* 화면 UI 컨테이너 */
+    .app-container {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .header {
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .input-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 22px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 560px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .label-hint {
+      font-size: 0.76rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 1rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      outline: none;
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+
+    .text-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .text-input::placeholder {
+      font-weight: 400;
+      color: #94a3b8;
+    }
+
+    /* 안내문 미리보기 영역 */
+    .output-section {
+      margin-top: 10px;
+    }
+
+    .output-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .output-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .print-btn {
+      flex: 1;
+      padding: 14px;
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      transition: all 0.15s ease;
+    }
+
+    .print-btn:hover {
+      background-color: var(--primary-hover);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .print-btn:active {
+      transform: translateY(0);
+    }
+
+    .copy-text-btn {
+      padding: 14px 20px;
+      background-color: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .copy-text-btn:hover {
+      background-color: #e2e8f0;
+      color: #0f172a;
+    }
+
+    /* =========================================================
+       인쇄물 (A4 서식) 스타일 - 깔끔한 흰색 종이 영역만 표시
+       ========================================================= */
+    .document-preview-wrapper {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: auto;
+    }
+
+    .paper-sheet {
+      background: #ffffff;
+      width: 595px; /* A4 72/96dpi 기준 실물 축척 규격 */
+      height: 842px; /* A4 정확한 비율 (210mm x 297mm) */
+      margin: 0 auto;
+      padding: 54px 54px 40px 54px; /* 상하 여백 균형 맞춤 */
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: none;
+      color: #000000;
+      font-family: "맑은 고딕", "Malgun Gothic", "Pretendard", -apple-system, sans-serif;
+      line-height: 1.4;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .doc-main-title {
+      font-size: 17pt;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: -0.5px;
+      margin-bottom: 20px;
+      color: #000000;
+      -webkit-text-stroke: 0.5px #000000;
+    }
+
+    .doc-box {
+      border: 1.8px solid #000000;
+      padding: 15px 18px;
+      margin-bottom: 12px;
+      font-size: 8.6pt;
+    }
+
+    .doc-box p {
+      margin-bottom: 5px;
+    }
+
+    .doc-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .doc-first-line {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 8.6pt;
+      line-height: 1.2;
+    }
+
+    .doc-row-indent {
+      padding-left: 14px;
+      margin-bottom: 4px;
+    }
+
+    .date-line {
+      display: flex;
+      align-items: center;
+      line-height: 1.2;
+    }
+
+    .date-frame {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #000000;
+      padding: 1px 5px;
+      font-weight: 700;
+      background: #ffffff;
+      color: #000000;
+      margin-right: 3px;
+      font-size: 8.6pt;
+      line-height: 1.2;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .date-underline {
+      display: inline-block;
+      border-bottom: 1.2px solid #000000;
+      padding: 0 1px;
+      font-weight: 700;
+      color: #000000;
+      font-size: 8.6pt;
+      margin-right: 2px;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .font-red {
+      color: #d32f2f;
+      font-weight: 700;
+    }
+
+    .font-bold {
+      font-weight: 700;
+    }
+
+    .font-small-note {
+      font-size: 6.8pt;
+    }
+
+    .sub-note {
+      font-size: 7.2pt;
+      color: #4b5563;
+      display: block;
+      margin-top: 1px;
+      margin-bottom: 4px;
+      padding-left: 14px;
+    }
+
+    .doc-desc-block {
+      margin-top: 8px;
+      font-size: 8.2pt;
+      line-height: 1.38;
+    }
+
+    .doc-bottom-section {
+      padding-left: 20px;
+      padding-right: 20px;
+      font-size: 8pt;
+      line-height: 1.4;
+      color: #111827;
+      box-sizing: border-box;
+    }
+
+    .doc-bottom-section p {
+      margin-bottom: 8px;
+    }
+
+    .patient-highlight {
+      font-weight: 800;
+      text-decoration: none;
+      font-size: 9pt;
+    }
+
+    .doc-footer {
+      text-align: center;
+      margin-top: 28px;
+      padding-top: 4px;
+    }
+
+    .doc-footer-logo {
+      height: 36px;
+      max-width: 190px;
+      width: auto;
+      display: inline-block;
+      object-fit: contain;
+    }
+
+    .doc-underline {
+      text-decoration: underline;
+      text-underline-position: under;
+    }
+
+    /* 토스트 알림 */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* =========================================================
+       인쇄 전용 스타일 (@media print)
+       실제 인쇄 시 상하좌우 균형 잡힌 A4 1장 출력
+       ========================================================= */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 20mm 26mm 15mm 26mm; /* 상단 여백을 20mm로 늘려 상하 균형 대칭 맞춤 */
+      }
+
+      html, body {
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .app-container {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+      }
+
+      .document-preview-wrapper {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        display: block !important;
+        height: auto !important;
+      }
+
+      .paper-sheet {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        aspect-ratio: auto !important;
+        font-size: 10.3pt !important;
+        line-height: 1.48 !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-inside: avoid !important;
+        break-after: avoid !important;
+      }
+
+      .doc-main-title {
+        font-size: 22pt !important;
+        font-weight: 900 !important;
+        margin-bottom: 24px !important;
+        -webkit-text-stroke: 0.7px #000000 !important;
+      }
+
+      .doc-box {
+        border: 2px solid #000000 !important;
+        padding: 20px 24px !important;
+        margin-bottom: 14px !important;
+        font-size: 10.5pt !important;
+        page-break-inside: avoid !important;
+      }
+
+      .doc-first-line {
+        display: flex !important;
+        align-items: center !important;
+        margin-bottom: 10px !important;
+        font-size: 10.5pt !important;
+      }
+
+      .doc-row-indent {
+        padding-left: 18px !important;
+        margin-bottom: 7px !important;
+      }
+
+      .date-line {
+        display: flex !important;
+        align-items: center !important;
+      }
+
+      .date-frame {
+        font-size: 10.5pt !important;
+        padding: 2px 7px !important;
+        border: 1.2px solid #000000 !important;
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .date-underline {
+        font-size: 10.5pt !important;
+        padding: 0 2px 1px 2px !important;
+        border-bottom: 1.5px solid #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .font-red {
+        color: #d32f2f !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .font-small-note {
+        font-size: 7.5pt !important;
+      }
+
+      .sub-note {
+        font-size: 9pt !important;
+        margin-bottom: 6px !important;
+        padding-left: 18px !important;
+      }
+
+      .doc-desc-block {
+        margin-top: 12px !important;
+        font-size: 10.2pt !important;
+        line-height: 1.48 !important;
+      }
+
+      .doc-bottom-section {
+        padding-left: 26px !important;
+        padding-right: 26px !important;
+        font-size: 9.8pt !important;
+        line-height: 1.48 !important;
+        page-break-inside: avoid !important;
+        box-sizing: border-box !important;
+      }
+
+      .doc-bottom-section p {
+        margin-bottom: 10px !important;
+      }
+
+      .patient-highlight {
+        font-size: 11pt !important;
+      }
+
+      .doc-footer {
+        margin-top: 36px !important; /* 로고를 더 하단으로 여유 있게 배치 */
+        padding-top: 4px !important;
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-inside: avoid !important;
+        break-after: avoid !important;
+      }
+
+      .doc-footer-logo {
+        height: 44px !important;
+        max-width: 220px !important;
+        width: auto !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 상단 헤더 -->
+    <div class="header no-print">
+      <h1>자동차보험 환자 안내문 작성기</h1>
+      <p class="subtitle">환자명, 사고일(6자리) 입력 시 안내문 자동 작성</p>
+    </div>
+
+    <!-- 입력 섹션 -->
+    <div class="input-card no-print">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="patient-name">
+            환자명
+            <span class="label-hint">(선택 / 미입력 시 'XXX')</span>
+          </label>
+          <input 
+            type="text" 
+            id="patient-name" 
+            class="text-input" 
+            placeholder="예: 홍길동"
+            autocomplete="off"
+          >
+        </div>
+        <div class="form-group">
+          <label for="accident-date">
+            사고 발생일 (수상일)
+            <span class="label-hint">예: 261030 (6자리 숫자)</span>
+          </label>
+          <input 
+            type="text" 
+            id="accident-date" 
+            class="text-input" 
+            placeholder="261030" 
+            maxlength="8" 
+            autofocus
+            autocomplete="off"
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- 출력 섹션 -->
+    <div class="output-section">
+      <div class="output-title-bar no-print">
+        <span class="output-title">📄 생성된 안내문 (A4 미리보기)</span>
+      </div>
+
+      <!-- 인쇄 대상 서식 (이미지 양식 100% 동일 구현) -->
+      <div class="document-preview-wrapper">
+        <div class="paper-sheet" id="print-area">
+          <div class="doc-main-title">부부한의원 자동차보험 치료 안내문</div>
+
+          <!-- 상단 테두리 박스 영역 -->
+          <div class="doc-box">
+            <div class="doc-first-line">
+              <span class="patient-highlight font-bold" id="view-name-1">XXX</span>&nbsp;님의 사고 발생일은&nbsp;
+              <span class="date-frame" id="view-accident-date">2026년 10월 30일 금요일</span>
+              <span>입니다.</span>
+            </div>
+
+            <div class="doc-row-indent">
+              <span class="date-underline" id="view-d20-date">2026년 11월 19일 목요일</span>까지 <span class="font-red">매일 치료 가능</span>합니다.
+              <span class="sub-note">(사고 발생일로부터 3주까지)</span>
+            </div>
+
+            <div class="doc-row-indent">
+              <span class="date-underline" id="view-d76-date">2027년 1월 14일 목요일</span>까지 <span class="font-red">주 3회 치료</span> 가능합니다.
+              <span class="sub-note">(사고 발생일로부터 11주까지)</span>
+            </div>
+
+            <div class="doc-row-indent">
+              <span class="date-underline" id="view-d181-date">2027년 4월 29일 목요일</span>까지 <span class="font-red">주 2회 치료</span> 가능합니다.
+              <span class="sub-note">(사고 발생일로부터 26주까지)</span>
+            </div>
+
+            <div class="doc-row-indent">
+              <span class="date-underline" id="view-d182-date">2027년 4월 30일 금요일</span>부터는 <span class="font-red">주 1회 치료 가능</span>합니다.
+              <span class="sub-note">(사고 발생일로부터 26주 이후)</span>
+            </div>
+
+            <div class="doc-desc-block">
+              “주 ○회 치료 가능합니다.” 에서 의미하는 1주일은<br>
+              사고 발생일을 기준으로 <span class="font-red" id="view-week-range">금요일부터 목요일까지를 의미합니다.</span>
+            </div>
+
+            <div class="doc-desc-block" style="margin-top: 14px;">
+              개정된 자동차보험 제도에 따라 상해 12~14급 경상환자분들은<br>
+              <span class="font-red">사고일로부터 8주를 초과하여 치료를 받으시려는 경우,</span><br>
+              자동차손해배상진흥원의 장기치료 필요성 검토를 받으셔야 합니다.<br>
+              8주 초과 치료를 원하실 경우,<br>
+              <div class="date-line" style="margin: 4px 0 6px 18px;">
+                <span class="date-frame" id="view-d49-date">2026년 12월 18일 금요일</span>
+                <span>까지 (사고 발생일 기준 <span class="font-red">7주 이내</span>)</span>
+              </div>
+              <div style="margin-bottom: 2px;">
+                <span class="doc-underline">진단서, 진료기록부 사본, 개인정보 수집·이용 동의서 및 영상 자료<span class="font-small-note">(판독지, CD 등)</span>를</span>
+              </div>
+              보험회사에 제출하여 자동차손해배상진흥원의 검토를 받게 됩니다.<br>
+              자세한 내용은 보험회사 보상 담당자에게 문의하시길 바랍니다.
+            </div>
+          </div>
+
+          <!-- 하단 안내 영역 -->
+          <div class="doc-bottom-section">
+            <p>
+              부부한의원에서 자동차 보험으로 받으시게 되는 치료실 기본 치료는<br>
+              침, 부항(건부항 혹은 사혈부항), 뜸(간접기기구), 전침(침전기자극술) 및 약침입니다.<br>
+              치료실에서 받으시는 핫팩, 경추안마기, 공기장화, ICT(전기치료), 자동부항기는<br>
+              서비스 치료 항목으로 기본 치료에 포함됩니다.
+            </p>
+
+            <p>
+              수치료기, 세라젬, 반신욕, 롤링베드, 황토 파라핀, 다리 마사지기, 노블레스, 안마의자 등<br>
+              2층 회복관리실의 서비스 물리치료 또한 기본 치료 후 편하게 이용하실 수 있습니다.
+            </p>
+
+            <p>
+              자동차 보험으로 <span class="font-red">총 20회의 추나 치료</span>가 가능합니다.
+            </p>
+
+            <p>
+              자동차 보험으로 <span class="font-red">총 21일분(7일분 x 3회)의 한약 처방</span>이 가능합니다.<br>
+              원장님께 처방 받으시면 탕전 후 다음 내원일에 수령하실 수 있습니다.<br>
+              단, 사고 발생일로부터 6주가 넘어가면 처방이 어려우실 수 있으니 참고 바랍니다.
+            </p>
+
+            <p style="margin-top: 14px;">
+              <span class="patient-highlight font-bold" id="view-name-2">XXX</span> 님께서 사고로부터 최대한 빠르게 회복하실 수 있도록<br>
+              내원하실 때마다 최선을 다하여 성심성의껏 치료할 것을 약속드립니다.<br>
+              오늘도 부부한의원을 찾아주셔서 진심으로 감사드립니다.
+            </p>
+          </div>
+
+          <!-- 최하단 로고 -->
+          <div class="doc-footer">
+            <img src="logo.png" alt="부부한의원 사람 냄새나는 한의원" class="doc-footer-logo">
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 인쇄 & 복사 버튼 -->
+      <div class="btn-group no-print">
+        <button type="button" class="print-btn" id="print-btn" onclick="handlePrint()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          <span id="btn-text">안내문 인쇄하기 (Enter)</span>
+        </button>
+        <button type="button" class="copy-text-btn" id="copy-btn" onclick="copyFullText()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>텍스트 복사</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span>✓ 복사되었습니다.</span>
+  </div>
+
+  <script>
+    const patientNameInput = document.getElementById('patient-name');
+    const accidentDateInput = document.getElementById('accident-date');
+    const toast = document.getElementById('toast');
+
+    // DOM 뷰 요소들
+    const viewName1 = document.getElementById('view-name-1');
+    const viewName2 = document.getElementById('view-name-2');
+    const viewAccidentDate = document.getElementById('view-accident-date');
+    const viewD20Date = document.getElementById('view-d20-date');
+    const viewD76Date = document.getElementById('view-d76-date');
+    const viewD181Date = document.getElementById('view-d181-date');
+    const viewD182Date = document.getElementById('view-d182-date');
+    const viewWeekRange = document.getElementById('view-week-range');
+    const viewD49Date = document.getElementById('view-d49-date');
+
+    const KOR_DAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+    // 날짜 포맷팅 함수: 날짜와 요일 자연스럽게 연결
+    function formatFullKoreanDate(date) {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const dayName = KOR_DAYS[date.getDay()];
+      return `${year}년 ${month}월 ${day}일 ${dayName}`;
+    }
+
+    // 날짜 가산 함수
+    function addDays(baseDate, days) {
+      const res = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate());
+      res.setDate(res.getDate() + days);
+      return res;
+    }
+
+    // 6자리(YYMMDD) 또는 8자리(YYYYMMDD) 숫자 문자열 파싱
+    function parseCustomDate(rawStr) {
+      if (!rawStr) return null;
+      const clean = rawStr.replace(/[^0-9]/g, '');
+
+      let year, month, day;
+      if (clean.length === 6) {
+        year = 2000 + parseInt(clean.substring(0, 2), 10);
+        month = parseInt(clean.substring(2, 4), 10);
+        day = parseInt(clean.substring(4, 6), 10);
+      } else if (clean.length === 8) {
+        year = parseInt(clean.substring(0, 4), 10);
+        month = parseInt(clean.substring(4, 6), 10);
+        day = parseInt(clean.substring(6, 8), 10);
+      } else {
+        return null;
+      }
+
+      if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+      const d = new Date(year, month - 1, day);
+      if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+        return null;
+      }
+      return d;
+    }
+
+    let isDateValid = false;
+
+    // 실시간 업데이트 함수
+    function updateNotice() {
+      // 1. 환자명 업데이트 (입력 없을 시 'XXX')
+      const name = patientNameInput.value.trim() || 'XXX';
+      viewName1.textContent = name;
+      viewName2.textContent = name;
+
+      // 2. 사고일 계산
+      const baseDate = parseCustomDate(accidentDateInput.value);
+
+      if (!baseDate) {
+        isDateValid = false;
+        // 미입력/유효하지 않을 때 기본 예시 문구 유지
+        const placeholder = 'XXXX년 XX월 XX일 X요일';
+        viewAccidentDate.textContent = placeholder;
+        viewD20Date.textContent = placeholder;
+        viewD76Date.textContent = placeholder;
+        viewD181Date.textContent = placeholder;
+        viewD182Date.textContent = placeholder;
+        viewWeekRange.textContent = '금요일부터 목요일까지를 의미합니다.';
+        viewD49Date.textContent = placeholder;
+        return;
+      }
+
+      isDateValid = true;
+
+      // 사고 발생일
+      viewAccidentDate.textContent = formatFullKoreanDate(baseDate);
+
+      // D+20 (사고 발생일로부터 3주까지 / 21일차 전날)
+      const d20 = addDays(baseDate, 20);
+      viewD20Date.textContent = formatFullKoreanDate(d20);
+
+      // D+76 (사고 발생일로부터 11주까지)
+      const d76 = addDays(baseDate, 76);
+      viewD76Date.textContent = formatFullKoreanDate(d76);
+
+      // D+181 (사고 발생일로부터 26주까지)
+      const d181 = addDays(baseDate, 181);
+      viewD181Date.textContent = formatFullKoreanDate(d181);
+
+      // D+182 (사고 발생일로부터 26주 이후)
+      const d182 = addDays(baseDate, 182);
+      viewD182Date.textContent = formatFullKoreanDate(d182);
+
+      // 사고 발생일 기준 1주일 요일 범위
+      // 시작 요일 = 사고일 요일, 끝 요일 = (시작 요일 - 1일) 요일
+      const startDayIdx = baseDate.getDay();
+      const endDayIdx = (startDayIdx + 6) % 7;
+      viewWeekRange.textContent = `${KOR_DAYS[startDayIdx]}부터 ${KOR_DAYS[endDayIdx]}까지를 의미합니다.`;
+
+      // D+49 (사고 발생일 기준 7주 이내, 8주 초과 치료 검토 필요시 제출 기한)
+      const d49 = addDays(baseDate, 49);
+      viewD49Date.textContent = formatFullKoreanDate(d49);
+    }
+
+    function showToast(msg) {
+      toast.querySelector('span').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // 인쇄 실행
+    function handlePrint() {
+      if (!isDateValid) {
+        showToast('⚠️ 사고 발생일 6자리를 올바르게 입력해주세요.');
+        accidentDateInput.focus();
+        return;
+      }
+      window.print();
+    }
+
+    // 전체 안내문 텍스트 클립보드 복사
+    function copyFullText() {
+      if (!isDateValid) {
+        showToast('⚠️ 사고 발생일 6자리를 올바르게 입력해주세요.');
+        accidentDateInput.focus();
+        return;
+      }
+
+      const text = document.getElementById('print-area').innerText;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('✓ 안내문 텍스트가 클립보드에 복사되었습니다.');
+        }).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+
+      function fallbackCopy() {
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        tempTextarea.style.position = 'fixed';
+        tempTextarea.style.top = '-9999px';
+        document.body.appendChild(tempTextarea);
+        tempTextarea.focus();
+        tempTextarea.select();
+        try {
+          document.execCommand('copy');
+          showToast('✓ 안내문 텍스트가 클립보드에 복사되었습니다.');
+        } catch (err) {
+          showToast('❌ 복사 권한 오류가 발생했습니다.');
+        }
+        document.body.removeChild(tempTextarea);
+      }
+    }
+
+    // 입력 필드 이벤트 리스너 등록
+    patientNameInput.addEventListener('input', updateNotice);
+    accidentDateInput.addEventListener('input', updateNotice);
+
+    // Enter 키 누르면 인쇄 실행
+    [patientNameInput, accidentDateInput].forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handlePrint();
+        }
+      });
+    });
+
+    // 기본 초기 상태: 오늘 날짜 또는 예시 261030
+    // 빈칸 상태에서 시작하여 사용자가 즉시 입력하도록 유도
+    updateNotice();
+  </script>
+</body>
+</html>
